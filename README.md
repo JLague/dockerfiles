@@ -2,20 +2,28 @@
 
 ## Recommended setup
 
+Connection:
+- Connect to uLaval's VPN
+- Login on Tchai: `ssh <your-IDUL>@tchaikovsky.gel.ulaval.ca`
+
+To be able to push to git:
 - Create SSH key on Tchai: `ssh-keygen`
 - Display and copy the public key `cat ~/.ssh/id_rsa`
 - Go to GitHub > Settings > SSH and GPG Keys
 - Click 'New SSH Key' and paste the SSH key.
 - Then, on Tchai, do: `git clone ...` (this repo and other repos)
+
+To develop stuff:
 - Open the project folder in VS Code using [Remote SSH extension](https://code.visualstudio.com/docs/remote/ssh).
 
 ## Running the Docker images
 
 Run one of the following, depending on what you're working on:
 ```
-docker run -it --gups 'device=0' lanternerds/hdr-nerf
-docker run -it --gups 'device=0' lanternerds/hdr-plenoxel
-docker run -it --gups 'device=0' lanternerds/nerfstudio-hdr
+docker run -it --gpus 'device=0' lanternerds/hdr-nerf
+docker run -it --gpus 'device=0' lanternerds/hdr-plenoxel
+docker run -it --gpus 'device=0' lanternerds/nerfstudio-hdr
+docker run -it --gpus 'device=0' -u $(id -u) -v ~/nerfstudio-data:/workspace/ -v /home/$(id -u)/.cache/:/home/user/.cache/ -p 7007:7007 --rm --shm-size=12gb lanternerds/nerfstudio-hdr
 ```
 
 > Note: We specify device=0 since we _only_ have access to the 24 GB Titan RTX on Tchai. Otherwise, we can ask Christophe for GPU 1.
