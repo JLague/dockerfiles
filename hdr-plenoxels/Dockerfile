@@ -39,8 +39,22 @@ RUN pip3 install -r requirements.txt && \
 
 WORKDIR /workspace
 
+# Found Titan RTX's "compute capability" here: https://developer.nvidia.com/cuda-gpus
+# Thanks to: https://github.com/pytorch/extension-cpp/issues/71#issuecomment-824919813
+ENV TORCH_CUDA_ARCH_LIST="7.5+PTX"
+
 RUN git clone https://github.com/postech-ami/HDR-Plenoxels.git --single-branch && \
     cd HDR-Plenoxels && \
     pip3 install .
 
 WORKDIR /workspace/HDR-Plenoxels
+
+RUN apt-get install unzip
+
+# Download demo dataset
+RUN pip3 install gdown && \
+    mkdir demo && \
+    cd demo && \
+    gdown 1-WdnwxKlj2IcjfFSKcgJ1kMQIX_WGig3 && \
+    unzip demo.zip && \
+    rm demo.zip
