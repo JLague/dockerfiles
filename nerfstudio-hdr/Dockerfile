@@ -1,8 +1,12 @@
 ARG CUDA_VERSION=11.2.0
 ARG OS_VERSION=20.04
 ARG USER_ID=1000
+
 # Define base image.
 FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${OS_VERSION}
+ARG CUDA_VERSION
+ARG OS_VERSION
+ARG USER_ID
 
 # metainformation
 LABEL org.opencontainers.image.version = "0.1.18"
@@ -87,17 +91,19 @@ RUN git clone --branch 2.1.0 https://ceres-solver.googlesource.com/ceres-solver.
     cd ../.. && \
     rm -rf ceres-solver
 
-# Install colmap.
-RUN git clone --branch 3.8 https://github.com/colmap/colmap.git --single-branch && \
-    cd colmap && \
-    mkdir build && \
-    cd build && \
-    cmake .. -DCUDA_ENABLED=ON \
-             -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCHITECTURES} && \
-    make -j `nproc` && \
-    make install && \
-    cd ../.. && \
-    rm -rf colmap
+# Note: colmap was not installed since we probably won't need it in the project
+
+# # Install colmap.
+# RUN git clone --branch 3.8 https://github.com/colmap/colmap.git --single-branch && \
+#     cd colmap && \
+#     mkdir build && \
+#     cd build && \
+#     cmake .. -DCUDA_ENABLED=ON \
+#              -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCHITECTURES} && \
+#     make -j `nproc` && \
+#     make install && \
+#     cd ../.. && \
+#     rm -rf colmap
 
 # Create non root user and setup environment.
 RUN useradd -m -d /home/user -g root -G sudo -u ${USER_ID} user
@@ -116,41 +122,44 @@ ENV PATH="${PATH}:/home/user/.local/bin"
 SHELL ["/bin/bash", "-c"]
 
 # Upgrade pip and install packages.
-RUN python3.10 -m pip install --upgrade pip setuptools pathtools promise pybind11
+RUN python3.9 -m pip install --upgrade pip setuptools pathtools promise pybind11
 # Install pytorch and submodules
-RUN CUDA_VER=${CUDA_VERSION%.*} && CUDA_VER=${CUDA_VER//./} && python3.10 -m pip install \
-    torch==2.0.1+cu${CUDA_VER} \
-    torchvision==0.15.2+cu${CUDA_VER} \
+# Note: I only found pytorch for CUDA 11.1
+RUN CUDA_VER=111 && CUDA_VER=${CUDA_VER//./} && python3.9 -m pip install \
+    torch==1.10.2+cu${CUDA_VER} \
+    torchvision==0.11.3+cu${CUDA_VER} \
         --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VER}
 # Install tynyCUDNN (we need to set the target architectures as environment variable first).
 ENV TCNN_CUDA_ARCHITECTURES=${CUDA_ARCHITECTURES}
-RUN python3.10 -m pip install git+https://github.com/NVlabs/tiny-cuda-nn.git@v1.6#subdirectory=bindings/torch
+RUN python3.9 -m pip install git+https://github.com/NVlabs/tiny-cuda-nn.git@v1.6#subdirectory=bindings/torch
 
-# Install pycolmap, required by hloc.
-RUN git clone --branch v0.4.0 --recursive https://github.com/colmap/pycolmap.git && \
-    cd pycolmap && \
-    python3.10 -m pip install . && \
-    cd ..
+# Note: colmap was not installed since we probably won't need it in the project
+# # Install pycolmap, required by hloc.
+# RUN git clone --branch v0.4.0 --recursive https://github.com/colmap/pycolmap.git && \
+#     cd pycolmap && \
+#     python3.9 -m pip install . && \
+#     cd ..
 
 # Install hloc master (last release (1.3) is too old) as alternative feature detector and matcher option for nerfstudio.
 RUN git clone --branch master --recursive https://github.com/cvg/Hierarchical-Localization.git && \
     cd Hierarchical-Localization && \
-    python3.10 -m pip install -e . && \
+    python3.9 -m pip install -e . && \
     cd ..
 
-# Install pyceres from source
-RUN git clone --branch v1.0 --recursive https://github.com/cvg/pyceres.git && \
-    cd pyceres && \
-    python3.10 -m pip install -e . && \
-    cd ..
-
-# Install pixel perfect sfm.
-RUN git clone --branch v1.0 --recursive https://github.com/cvg/pixel-perfect-sfm.git && \
-    cd pixel-perfect-sfm && \
-    python3.10 -m pip install -e . && \
-    cd ..
-
-RUN python3.10 -m pip install omegaconf
+# Note: colmap was not installed since we probably won't need it in the project
+# # Install pyceres from source
+# RUN git clone --branch v1.0 --recursive https://github.com/cvg/pyceres.git && \
+#     cd pyceres && \
+#     python3.9 -m pip install -e . && \
+#     cd ..
+# 
+# # Install pixel perfect sfm.
+# RUN git clone --branch v1.0 --recursive https://github.com/cvg/pixel-perfect-sfm.git && \
+#     cd pixel-perfect-sfm && \
+#     python3.9 -m pip install -e . && \
+#     cd ..
+# 
+RUN python3.9 -m pip install omegaconf
 # Copy nerfstudio folder and give ownership to user.
 ADD . /home/user/nerfstudio
 USER root
@@ -159,7 +168,7 @@ USER ${USER_ID}
 
 # Install nerfstudio dependencies.
 RUN cd nerfstudio && \
-    python3.10 -m pip install -e . && \
+    python3.9 -m pip install -e . && \
     cd ..
 
 # Change working directory
